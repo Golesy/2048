@@ -42,11 +42,14 @@ public class GameManager : MonoBehaviour
     public Dictionary<Vector2,GameObject> GridPositions = new Dictionary<Vector2, GameObject>();
     public Dictionary<Vector2, Node> ActiveNodes = new Dictionary<Vector2, Node>();
 
+    public Dictionary<Vector2, Node> UndoState = new Dictionary<Vector2, Node>();
+
     public int MaxX;
     public int MaxY;
 
     public Color[] ColorList = new Color[11];
 
+    private int UndoScore;
     private int Score;
     private GameState State;
 
@@ -104,7 +107,7 @@ public class GameManager : MonoBehaviour
         InstantiateNode(AvailablePositions[Random.Range(0, AvailablePositions.Count)]);
     }
 
-    public void InstantiateNode(Vector2 position)
+    public Node InstantiateNode(Vector2 position)
     {
         Node NewNode = (Node)Instantiate(NodeRef, NodeContainer);
 
@@ -112,6 +115,44 @@ public class GameManager : MonoBehaviour
         NewNode.NodePosition = position;
 
         ActiveNodes.Add(position, NewNode);
+
+        return NewNode;
+    }
+
+    public void SaveUndoState()
+    {
+        UndoState.Clear();
+
+        foreach (KeyValuePair<Vector2,Node> ActiveNode in ActiveNodes)
+        {
+            UndoState.Add(ActiveNode.Key, Instantiate(ActiveNode.Value));
+        }
+
+        UndoScore = Score;
+    }
+
+    public void Undo() // this code is ugly but I had trouble resetting existing nodes :S
+    {
+        if (UndoState.Count == 0) return;
+
+        //reset existing nodes
+        foreach (KeyValuePair<Vector2, Node> ActiveNode in ActiveNodes)
+        {
+            Destroy(ActiveNode.Value.gameObject);
+        }
+
+        ActiveNodes.Clear();
+
+        foreach (KeyValuePair<Vector2, Node> UndoNode in UndoState)
+        {
+            Node NewNode = InstantiateNode(UndoNode.Key);
+            NewNode.ResetNode(UndoNode.Value);
+        }
+
+        Score = UndoScore;
+        ScoreText.text = "SCORE:\n" + Score;
+
+        UndoState.Clear();
     }
 
     //MOVEMENT -----------------------------------------------------------------------------------------------------
@@ -281,6 +322,7 @@ public class GameManager : MonoBehaviour
 
         if(Input.GetKeyDown(KeyCode.RightArrow))
         {
+            SaveUndoState();
             MoveNodesRight();
             AddNode();
             CheckForMoves();
@@ -288,6 +330,7 @@ public class GameManager : MonoBehaviour
 
         else if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
+            SaveUndoState();
             MoveNodesLeft();
             AddNode();
             CheckForMoves();
@@ -295,6 +338,7 @@ public class GameManager : MonoBehaviour
 
         else if (Input.GetKeyDown(KeyCode.UpArrow))
         {
+            SaveUndoState();
             MoveNodesUp();
             AddNode();
             CheckForMoves();
@@ -302,6 +346,7 @@ public class GameManager : MonoBehaviour
 
         else if (Input.GetKeyDown(KeyCode.DownArrow))
         {
+            SaveUndoState();
             MoveNodesDown();
             AddNode();
             CheckForMoves();

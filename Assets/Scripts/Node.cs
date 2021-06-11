@@ -26,6 +26,26 @@ public class Node : MonoBehaviour
         FinalPosition = newPos;
     }
 
+    public Node CloneNode()
+    {
+        Node NewNode = new Node(NodePosition);
+        NewNode.score = score;
+        NewNode.ColorIndex = ColorIndex;
+        NewNode.FinalPosition = FinalPosition;
+
+        return NewNode;
+    }
+
+    public void ResetNode(Node UndoValues)
+    {
+        score = UndoValues.score;
+        ColorIndex = UndoValues.ColorIndex;
+        FinalPosition = UndoValues.FinalPosition;
+
+        NodeText.text = score.ToString();
+        NodeImage.color = GameManager.Instance.ColorList[ColorIndex];
+    }
+
     public void SetNodeScore()
     {
         score *= 2;
